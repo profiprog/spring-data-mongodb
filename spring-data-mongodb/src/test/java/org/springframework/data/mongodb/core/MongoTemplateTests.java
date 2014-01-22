@@ -94,6 +94,7 @@ import com.mongodb.WriteResult;
  * @author Patryk Wasik
  * @author Thomas Darimont
  * @author Komi Innocent
+ * @author Christoph Strobl
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("classpath:infrastructure.xml")
@@ -2085,6 +2086,26 @@ public class MongoTemplateTests {
 						assertThat(result.value, is(EnumValue.VALUE2));
 					}
 				});
+	}
+
+	/**
+	 * @see DATAMONGO-807
+	 */
+	@Test
+	public void findAndModifyShouldRetrainTypeInformationWithinUpdatedType() {
+
+		Document document = new Document();
+		document.model = new ModelA().withValue("value1");
+
+		template.save(document);
+
+		Query query = query(where("id").is(document.id));
+		Update update = Update.update("model", new ModelA().withValue("value2"));
+		template.findAndModify(query, update, Document.class);
+
+		Document retrieved = template.findOne(query, Document.class);
+		Assert.assertThat(retrieved.model, instanceOf(ModelA.class));
+		Assert.assertThat(retrieved.model.value(), equalTo("value2"));
 	}
 
 	static interface Model {

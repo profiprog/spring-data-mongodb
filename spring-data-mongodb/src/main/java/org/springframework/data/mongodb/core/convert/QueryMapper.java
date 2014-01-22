@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2013 the original author or authors.
+ * Copyright 2011-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import com.mongodb.DBRef;
  * @author Jon Brisbin
  * @author Oliver Gierke
  * @author Patryk Wasik
+ * @author Christoph Strobl
  */
 public class QueryMapper {
 
@@ -110,11 +111,31 @@ public class QueryMapper {
 				Keyword keyword = new Keyword((DBObject) rawValue);
 				result.put(newKey, getMappedKeyword(field, keyword));
 			} else {
-				result.put(newKey, getMappedValue(field, rawValue));
+				Object mappedPropertyFieldValue = getMappedValue(field, rawValue);
+				writeClassTypeInformationForUpdateIfRequired(rawValue, newKey, mappedPropertyFieldValue);
+				result.put(newKey, mappedPropertyFieldValue);
 			}
 		}
 
 		return result;
+	}
+
+	/**
+	 * retain class type information for eg. nested types during an update, otherwise conversion will be corrupted when
+	 * reading values from store
+	 * 
+	 * @param rawValue
+	 * @param newKey
+	 * @param mappedPropertyFieldValue
+	 */
+	private void writeClassTypeInformationForUpdateIfRequired(Object rawValue, String newKey,
+			Object mappedPropertyFieldValue) {
+
+		if (!converter.getTypeMapper().isTypeKey(newKey) && mappedPropertyFieldValue instanceof DBObject) {
+			if (!converter.getConversionService().canConvert(rawValue.getClass(), DBObject.class)) {
+				converter.getTypeMapper().writeType(rawValue.getClass(), (DBObject) mappedPropertyFieldValue);
+			}
+		}
 	}
 
 	/**
