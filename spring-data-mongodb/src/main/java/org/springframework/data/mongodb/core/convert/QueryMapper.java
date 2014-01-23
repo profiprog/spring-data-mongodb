@@ -108,34 +108,13 @@ public class QueryMapper {
 			String newKey = field.getMappedKey();
 
 			if (isNestedKeyword(rawValue) && !field.isIdField()) {
-				Keyword keyword = new Keyword((DBObject) rawValue);
-				result.put(newKey, getMappedKeyword(field, keyword));
+				result.put(newKey, getMappedKeyword(field, new Keyword((DBObject) rawValue)));
 			} else {
-				Object mappedPropertyFieldValue = getMappedValue(field, rawValue);
-				writeClassTypeInformationForUpdateIfRequired(rawValue, newKey, mappedPropertyFieldValue);
-				result.put(newKey, mappedPropertyFieldValue);
+				result.put(newKey, getMappedValue(field, rawValue));
 			}
 		}
 
 		return result;
-	}
-
-	/**
-	 * retain class type information for eg. nested types during an update, otherwise conversion will be corrupted when
-	 * reading values from store
-	 * 
-	 * @param rawValue
-	 * @param newKey
-	 * @param mappedPropertyFieldValue
-	 */
-	private void writeClassTypeInformationForUpdateIfRequired(Object rawValue, String newKey,
-			Object mappedPropertyFieldValue) {
-
-		if (!converter.getTypeMapper().isTypeKey(newKey) && mappedPropertyFieldValue instanceof DBObject) {
-			if (!converter.getConversionService().canConvert(rawValue.getClass(), DBObject.class)) {
-				converter.getTypeMapper().writeType(rawValue.getClass(), (DBObject) mappedPropertyFieldValue);
-			}
-		}
 	}
 
 	/**
@@ -191,7 +170,7 @@ public class QueryMapper {
 	 * @param newKey the key the value will be bound to eventually
 	 * @return
 	 */
-	private Object getMappedValue(Field documentField, Object value) {
+	protected Object getMappedValue(Field documentField, Object value) {
 
 		if (documentField.isIdField()) {
 
@@ -418,7 +397,7 @@ public class QueryMapper {
 	 * 
 	 * @author Oliver Gierke
 	 */
-	private static class Field {
+	static class Field {
 
 		private static final String ID_KEY = "_id";
 

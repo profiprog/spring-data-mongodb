@@ -17,6 +17,8 @@ package org.springframework.data.mongodb.core.convert;
 
 import org.springframework.data.mongodb.core.mapping.MongoPersistentEntity;
 
+import com.mongodb.DBObject;
+
 /**
  * A subclass of {@link QueryMapper} that retains type information on the mongo types.
  * 
@@ -24,7 +26,7 @@ import org.springframework.data.mongodb.core.mapping.MongoPersistentEntity;
  */
 public class UpdateMapper extends QueryMapper {
 
-	private final MongoWriter<?> converter;
+	private final MongoConverter converter;
 
 	/**
 	 * Creates a new {@link UpdateMapper} using the given {@link MongoConverter}.
@@ -48,5 +50,39 @@ public class UpdateMapper extends QueryMapper {
 	protected Object delegateConvertToMongoType(Object source, MongoPersistentEntity<?> entity) {
 		return entity == null ? super.delegateConvertToMongoType(source, null) : converter.convertToMongoType(source,
 				entity.getTypeInformation());
+	}
+
+	/**
+	 * retain class type information for eg. nested types during an update, otherwise conversion will be corrupted when
+	 * reading values from store
+	 * 
+	 * @param rawValue
+	 * @param newKey
+	 * @param mappedPropertyFieldValue
+	 */
+	private void writeClassTypeInformationForUpdateIfRequired(Object rawValue, String newKey,
+			Object mappedPropertyFieldValue) {
+
+		if (!converter.getTypeMapper().isTypeKey(newKey) && mappedPropertyFieldValue instanceof DBObject) {
+			if (!converter.getConversionService().canConvert(rawValue.getClass(), DBObject.class)) {
+				converter.getTypeMapper().writeType(rawValue.getClass(), (DBObject) mappedPropertyFieldValue);
+			}
+		}
+	}
+
+	/**
+	 * (non-Javadoc)
+	 * 
+	 * @see org.springframework.data.mongodb.core.convert.QueryMapper#getMappedValue(org.springframework.data.mongodb.core.convert.QueryMapper.Field,
+	 *      java.lang.Object)
+	 */
+	@Override
+	protected Object getMappedValue(Field documentField, Object value) {
+
+		Object mappedPropertyFieldValue = super.getMappedValue(documentField, value);
+
+		writeClassTypeInformationForUpdateIfRequired(value, documentField.getMappedKey(), mappedPropertyFieldValue);
+
+		return mappedPropertyFieldValue;
 	}
 }
