@@ -2092,7 +2092,7 @@ public class MongoTemplateTests {
 	 * @see DATAMONGO-807
 	 */
 	@Test
-	public void findAndModifyShouldRetrainTypeInformationWithinUpdatedType() {
+	public void findAndModifyShouldRetainTypeInformationWithinUpdatedType() {
 
 		Document document = new Document();
 		document.model = new ModelA().withValue("value1");

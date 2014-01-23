@@ -85,6 +85,7 @@ public class UpdateMapperUnitTests {
 		DBObject set = DBObjectTestUtils.getAsDBObject(mappedObject, "$set");
 		DBObject modelDbObject = (DBObject) set.get("model");
 		assertThat(modelDbObject.get("_class"), not(nullValue()));
+		assertThat(modelDbObject.get("_class"), is((Object) ModelImpl.class.getName()));
 	}
 
 	/**
@@ -119,9 +120,7 @@ public class UpdateMapperUnitTests {
 		assertThat(set.get("_class"), nullValue());
 	}
 
-	static interface Model {
-
-	}
+	static interface Model {}
 
 	static class ModelImpl implements Model {
 		public int value;
